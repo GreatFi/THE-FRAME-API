@@ -29,6 +29,6 @@ CREATE TABLE products (
     price       DECIMAL(10, 2) NOT NULL,
     image       TEXT NOT NULL,
     description TEXT NOT NULL,
-    created_at  TIMESTAMP DEFAULT NOW()
+    created_at  TIMESTAMP DEFAULT NOW() 
 );
 

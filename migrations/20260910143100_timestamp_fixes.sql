@@ -1,0 +1,4 @@
+-- Add migration script here
+ALTER TABLE users ALTER COLUMN created_at TYPE TIMESTAMPTZ;
+ALTER TABLE genres ALTER COLUMN created_at TYPE TIMESTAMPTZ;
+ALTER TABLE products ALTER COLUMN created_at TYPE TIMESTAMPTZ;
