@@ -1,0 +1,21 @@
+// this module defines the routes for the API.
+
+use axum::{Router, routing::get};
+use sqlx::PgPool;
+
+use crate::handler::product::{
+    health_check_handler,
+    get_products_handler,
+    create_product_handler,
+    get_product_by_id_handler,
+    update_product_by_id_handler,
+    delete_product_handler,
+};
+
+pub fn create_router(pool: PgPool) -> Router {
+    Router::new()
+        .route("/", get(health_check_handler))
+        .route("/products", get(get_products_handler).post(create_product_handler))
+        .route("/products/{id}", get(get_product_by_id_handler).put(update_product_by_id_handler).delete(delete_product_handler))
+        .with_state(pool)
+}

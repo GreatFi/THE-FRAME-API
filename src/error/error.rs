@@ -1,0 +1,1 @@
+// This module specifies the error types and handling for the application.
