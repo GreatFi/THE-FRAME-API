@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 use chrono::{DateTime, Utc};
-
+use crate::entity::auth::User;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UserRequest{
     pub name: String,
@@ -15,3 +15,8 @@ pub struct RefreshTokenRequest{
     pub expires_at: Option<DateTime<Utc>>
 }
 
+#[derive(Serialize)]
+pub struct AuthResponse {
+    pub user: User,
+    pub refresh_token: String,
+}
