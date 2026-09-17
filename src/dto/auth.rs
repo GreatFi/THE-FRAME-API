@@ -5,7 +5,7 @@ use crate::entity::auth::User;
 pub struct UserRequest{
     pub name: String,
     pub email: String,
-    pub password: String,
+    pub password: String
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -19,4 +19,5 @@ pub struct RefreshTokenRequest{
 pub struct AuthResponse {
     pub user: User,
     pub refresh_token: String,
+    pub access_token: String,
 }
