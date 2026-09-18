@@ -1,5 +1,5 @@
 use crate::error::error::AppError;
-use argon2::{Argon2, PasswordHasher};
+use argon2::{Argon2, PasswordHasher, PasswordVerifier};
 use chrono::{DateTime, Duration, Utc};
 use rand::{TryRng};
 use rand::rngs::SysRng;
@@ -14,7 +14,7 @@ use jsonwebtoken::{encode, Header};
 
 use crate::states::appstate::AppState;
 use crate::entity::auth::{User};
-use crate::repository::auth::{create_ref_token, create_user};
+use crate::repository::auth::{create_ref_token, create_user, retrieve_user};
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
    sub: Uuid,
@@ -29,12 +29,34 @@ pub async fn register(app_state: &AppState, name:&str, email:&str, password:&str
     Ok((new_user, ref_token, access_token))
 }
 
+pub async fn login(app_state: &AppState, email:&str, password: &str) -> Result<(User, String, String), AppError>{
+    
+    let user = retrieve_user(app_state, email).await?;
+
+    let logged_user = match user {
+        Some(user) => {
+            let verified_password = argon2::Argon2::default().verify_password(password.as_bytes(), user.password.as_str());
+            match verified_password{
+                Ok(()) => {
+                    let ref_token = generate_refresh_token(app_state, user.id).await?;
+                    let access_token = generate_access_token(app_state, user.id, Utc::now() + Duration::minutes(30)).await?;
+                    Ok((user, ref_token, access_token))
+                }
+                Err(_) => Err(AppError::Unauthorized)
+            }
+        }
+        None => Err(AppError::Unauthorized)
+    };
+    logged_user
+}
+
+
 // password hashing
 pub fn hash_password(password: &str) -> Result<String, AppError> {
     let argon2 = Argon2::default();
 
     let hashed = argon2
-        .hash_password(password.as_bytes()).expect("password hash") //add ? here later after implementing the from trait for the argon error type
+        .hash_password(password.as_bytes())? 
         .to_string();
 
     Ok(hashed)
@@ -43,7 +65,7 @@ pub fn hash_password(password: &str) -> Result<String, AppError> {
 // generate a refresh token, hash it, and store it in the database
 pub async fn generate_refresh_token(app_state: &AppState, user_id: Uuid) -> Result<String, AppError> {
     let mut bytes = [0u8; 32];
-    SysRng.try_fill_bytes(&mut bytes); //add ? here later after implementing the from trait for the sys error type
+    SysRng.try_fill_bytes(&mut bytes)?; 
 
     let token = URL_SAFE_NO_PAD.encode(bytes);
 
@@ -71,7 +93,7 @@ pub async fn generate_access_token(app_state: &AppState, user_id: Uuid, expiry:D
         sub: user_id,
         exp: expiry
     };
-    let token = encode(&Header::default(), &my_claims, &app_state.encoding_key).expect("token"); //add ? here later after implementing the from trait for the jwt error type
+    let token = encode(&Header::default(), &my_claims, &app_state.encoding_key)?;
 
     Ok(token)
 }

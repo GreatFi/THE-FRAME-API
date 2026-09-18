@@ -32,3 +32,10 @@ pub async fn create_ref_token(app_state: &AppState, user_id: Uuid, token_hash:&s
     Ok(ref_token)
 }
 
+
+pub async fn retrieve_user(app_state: &AppState, email:&str) -> Result<Option<User>, AppError>{
+    let user = sqlx::query_as!(User, 
+        "SELECT id, name, email, password, created_at FROM users WHERE email=$1", email).fetch_optional(&app_state.pool).await?;
+    
+    Ok(user)
+}

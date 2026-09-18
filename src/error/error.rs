@@ -1,5 +1,6 @@
 // This module specifies the error types and handling for the application.
 
+use rand::rngs::SysError;
 use thiserror::Error;
 use axum::{
     response::{Response, IntoResponse},
@@ -19,7 +20,13 @@ pub enum AppError {
     #[error("Bad request")]
     BadRequest,
     #[error("Internal server error")]
-    InternalServerError(#[from] sqlx::Error),
+    DatabaseError(#[from] sqlx::Error),
+    #[error("Internal server error")]
+    JsonWebTokenError(#[from] jsonwebtoken::errors::Error),
+    #[error("Internal server error")]
+    Argon2Error(#[from] argon2::password_hash::Error),
+    #[error("Internal server error")]
+    SysRngError(#[from] SysError),
 }
 
 impl IntoResponse for AppError{
@@ -33,7 +40,10 @@ impl IntoResponse for AppError{
             AppError::NotFound => StatusCode::NOT_FOUND,
             AppError::Unauthorized => StatusCode::UNAUTHORIZED,
             AppError::BadRequest => StatusCode::BAD_REQUEST,
-            AppError::InternalServerError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::DatabaseError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::JsonWebTokenError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::Argon2Error(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::SysRngError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
         (status, body).into_response()
     }

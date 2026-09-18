@@ -9,6 +9,12 @@ pub struct UserRequest{
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct LoginRequest{
+    pub email: String,
+    pub password: String
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RefreshTokenRequest{
     pub user_id: String,
     pub token: String,
