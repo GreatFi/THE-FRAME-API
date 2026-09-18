@@ -5,7 +5,6 @@ use axum::{
     response::{Response, IntoResponse},
     http::StatusCode
 };
-use std::convert::From;
 
 #[derive(Debug, Error)]
 pub enum AppError {

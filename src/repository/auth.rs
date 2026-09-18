@@ -1,7 +1,7 @@
 use anyhow::Result;
 use sqlx::types::Uuid;
 use crate::entity::auth::{User, RefreshToken};
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Utc};
 use crate::states::appstate::AppState;
 use crate::error::error::AppError;
 

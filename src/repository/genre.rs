@@ -1,4 +1,3 @@
-use sqlx::postgres::{PgPool};
 use anyhow::Result;
 use crate::entity::genre::Genre;
 use crate::dto::product::Category;

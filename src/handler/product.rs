@@ -6,7 +6,6 @@ use axum::{
     http::StatusCode,
     Json,
 };
-use sqlx::PgPool;
 use crate::entity::product::Product;
 use crate::dto::product::{ProductRequest};
 use crate::repository::product::{create_product, get_products, get_product_by_id, update_product, delete_product};

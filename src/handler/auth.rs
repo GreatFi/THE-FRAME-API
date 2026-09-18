@@ -1,7 +1,6 @@
 use crate::error::error::AppError;
 use axum::{
     extract::{State},
-    http::StatusCode,
     Json,
 };
 use crate::{dto::auth::{UserRequest, AuthResponse}, entity::auth::User};

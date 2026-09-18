@@ -1,10 +1,8 @@
 use crate::error::error::AppError;
 use axum::{
     extract::{State},
-    http::StatusCode,
     Json,
 };
-use sqlx::PgPool;
 use crate::entity::genre::Genre;
 use crate::repository::genre::get_genres;
 use crate::states::appstate::AppState;
