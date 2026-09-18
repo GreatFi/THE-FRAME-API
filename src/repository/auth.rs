@@ -3,8 +3,9 @@ use sqlx::types::Uuid;
 use crate::entity::auth::{User, RefreshToken};
 use chrono::{DateTime, Duration, Utc};
 use crate::states::appstate::AppState;
+use crate::error::error::AppError;
 
-pub async fn create_user(app_state: &AppState, name:&str, email:&str, hashed_password:&str) -> Result<User>{
+pub async fn create_user(app_state: &AppState, name:&str, email:&str, hashed_password:&str) -> Result<User, AppError>{
 
     let new_user = sqlx::query_as!(User, "INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email, password, created_at", name, email, hashed_password).fetch_one(&app_state.pool).await?;
 
@@ -12,12 +13,12 @@ pub async fn create_user(app_state: &AppState, name:&str, email:&str, hashed_pas
 }
 
 
-pub async fn get_users(app_state: &AppState) -> Result<Vec<User>>{
+pub async fn get_users(app_state: &AppState) -> Result<Vec<User>, AppError>{
     let users = sqlx::query_as!(User, "SELECT id, name, email, password, created_at FROM users").fetch_all(&app_state.pool).await?;
     Ok(users)
 }
 
-pub async fn create_ref_token(app_state: &AppState, user_id: Uuid, token_hash:&str, expires_at: DateTime<Utc>) -> Result<RefreshToken>{
+pub async fn create_ref_token(app_state: &AppState, user_id: Uuid, token_hash:&str, expires_at: DateTime<Utc>) -> Result<RefreshToken, AppError>{
 
 
     let ref_token = sqlx::query_as!(

@@ -1,13 +1,13 @@
 // this module is responsible for the database operations related to products in the ecommerce application.
 
-use sqlx::postgres::{PgPool};
+use crate::error::error::AppError;
 use sqlx::types::BigDecimal;
 use anyhow::Result;
 use crate::entity::product::Product;
 use crate::dto::product::Category;
 use crate::states::appstate::AppState;
 // This function is responsible for the creation of products in the database.
-pub async fn create_product(app_state: &AppState, title:&str, author:&str, category:Category, genre_id:i32, price:BigDecimal, image:&str, desc:&str) -> Result<Product>{
+pub async fn create_product(app_state: &AppState, title:&str, author:&str, category:Category, genre_id:i32, price:BigDecimal, image:&str, desc:&str) -> Result<Product, AppError>{
     let product = sqlx::query_as!(Product,r#"
                                      INSERT INTO products (title, author, category, genre_id, price, image, description)
                                      VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -19,7 +19,7 @@ pub async fn create_product(app_state: &AppState, title:&str, author:&str, categ
     Ok(product)
 }
 
-pub async fn get_products(app_state: &AppState) -> Result<Vec<Product>>{
+pub async fn get_products(app_state: &AppState) -> Result<Vec<Product>, AppError>{
     let products = sqlx::query_as!(Product, 
         r#"SELECT id, title, author, category as "category: Category", genre_id, price, image, description, created_at FROM products"#
     ).fetch_all(&app_state.pool).await?;
@@ -27,12 +27,12 @@ pub async fn get_products(app_state: &AppState) -> Result<Vec<Product>>{
     Ok(products)
 }
 
-pub async fn get_product_by_id(app_state: &AppState, id:i32) -> Result<Product> {
+pub async fn get_product_by_id(app_state: &AppState, id:i32) -> Result<Product, AppError> {
     let single_product = sqlx::query_as!(Product,r#"SELECT id, title, author, category as "category: Category", genre_id, price, image, description, created_at FROM products WHERE id = $1"#, id).fetch_one(&app_state.pool).await?;
     Ok(single_product)
 }
 
-pub async fn update_product(id:i32, title: &str, author: &str, category:Category, genre_id:i32, price:BigDecimal, image:&str, desc:&str, app_state: &AppState) -> Result<Product>{
+pub async fn update_product(id:i32, title: &str, author: &str, category:Category, genre_id:i32, price:BigDecimal, image:&str, desc:&str, app_state: &AppState) -> Result<Product, AppError>{
     let updated = sqlx::query_as!(Product, 
         r#"UPDATE products 
         SET title = $1,
@@ -50,7 +50,7 @@ pub async fn update_product(id:i32, title: &str, author: &str, category:Category
     Ok(updated)
 }
 
-pub async fn delete_product(app_state: &AppState, id:i32) -> Result<()>{
+pub async fn delete_product(app_state: &AppState, id:i32) -> Result<(), AppError>{
     sqlx::query!(r#"DELETE FROM products WHERE id = $1"#, id)
         .execute(&app_state.pool)
         .await?;
