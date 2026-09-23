@@ -5,13 +5,14 @@ mod dto;
 mod entity;
 mod error;
 mod handler;
+mod middleware;
 mod repository;
 mod service;
 mod routes;
 mod states;
 
 
-use jsonwebtoken::EncodingKey;
+use jsonwebtoken::{DecodingKey, EncodingKey};
 use tokio::net::TcpListener;
 use std::env;
 use dotenvy::dotenv;
@@ -27,10 +28,11 @@ async fn main() {
 
     let secret = env::var("JWT_SECRET").expect("Jwt Secret");
     let encoding_key = EncodingKey::from_secret(secret.as_ref());
-
+    let decoding_key = DecodingKey::from_secret(secret.as_ref());
     let app_state = AppState{
         pool,
-        encoding_key
+        encoding_key,
+        decoding_key
     };
 
     let app = create_router(app_state);

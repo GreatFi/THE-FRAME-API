@@ -9,16 +9,17 @@ use sha2::{Sha256, Digest};
 use anyhow::Result;
 use sqlx::types::Uuid;
 use serde::{Serialize, Deserialize};
-use jsonwebtoken::{encode, Header};
+use jsonwebtoken::{Header, Validation, decode, encode};
 
 
 use crate::states::appstate::AppState;
 use crate::entity::auth::{User};
 use crate::repository::auth::{create_ref_token, create_user, retrieve_user};
+
 #[derive(Debug, Serialize, Deserialize)]
-struct Claims {
-   sub: Uuid,
-   exp: DateTime<Utc>
+pub struct Claims {
+   pub sub: Uuid,
+   pub exp: DateTime<Utc>
 }
 
 pub async fn register(app_state: &AppState, name:&str, email:&str, password:&str) -> Result<(User, String, String), AppError> {
@@ -96,4 +97,11 @@ pub async fn generate_access_token(app_state: &AppState, user_id: Uuid, expiry:D
     let token = encode(&Header::default(), &my_claims, &app_state.encoding_key)?;
 
     Ok(token)
+}
+
+// decode the access token to get the claims
+pub fn decode_access_token(app_state: &AppState, token_header: String) -> Result<Claims, AppError> {
+    let token_data = decode::<Claims>(&token_header, &app_state.decoding_key, &Validation::new(jsonwebtoken::Algorithm::HS256))?;
+    let claims = token_data.claims;
+    Ok(claims)
 }
