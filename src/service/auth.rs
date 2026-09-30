@@ -1,6 +1,7 @@
+use crate::dto::auth::Role;
 use crate::error::error::AppError;
 use argon2::{Argon2, PasswordHasher, PasswordVerifier};
-use chrono::{DateTime, Duration, Utc};
+use chrono::{   Duration, Utc};
 use rand::{TryRng};
 use rand::rngs::SysRng;
 use base64::engine::Engine;
@@ -19,14 +20,14 @@ use crate::repository::auth::{create_ref_token, create_user, retrieve_user};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
    pub sub: Uuid,
-   pub exp: DateTime<Utc>
+   pub exp: i64
 }
 
 pub async fn register(app_state: &AppState, name:&str, email:&str, password:&str) -> Result<(User, String, String), AppError> {
     let hashed_password = hash_password(password)?;
     let new_user = create_user(app_state, name, email, &hashed_password).await?;
     let ref_token = generate_refresh_token(app_state, new_user.id).await?;
-    let access_token = generate_access_token(app_state, new_user.id, Utc::now() + Duration::minutes(30)).await?;
+    let access_token = generate_access_token(app_state, new_user.id, (Utc::now() + Duration::minutes(15)).timestamp()).await?;
     Ok((new_user, ref_token, access_token))
 }
 
@@ -40,7 +41,7 @@ pub async fn login(app_state: &AppState, email:&str, password: &str) -> Result<(
             match verified_password{
                 Ok(()) => {
                     let ref_token = generate_refresh_token(app_state, user.id).await?;
-                    let access_token = generate_access_token(app_state, user.id, Utc::now() + Duration::minutes(30)).await?;
+                    let access_token = generate_access_token(app_state, user.id, (Utc::now() + Duration::minutes(30)).timestamp()).await?;
                     Ok((user, ref_token, access_token))
                 }
                 Err(_) => Err(AppError::Unauthorized)
@@ -88,7 +89,7 @@ pub async fn generate_refresh_token(app_state: &AppState, user_id: Uuid) -> Resu
 }
 
 // generate an access token and return it
-pub async fn generate_access_token(app_state: &AppState, user_id: Uuid, expiry:DateTime<Utc>) -> Result<String, AppError>{
+pub async fn generate_access_token(app_state: &AppState, user_id: Uuid, expiry:i64) -> Result<String, AppError>{
     
     let my_claims = Claims{
         sub: user_id,
@@ -100,8 +101,25 @@ pub async fn generate_access_token(app_state: &AppState, user_id: Uuid, expiry:D
 }
 
 // decode the access token to get the claims
+
 pub fn decode_access_token(app_state: &AppState, token_header: String) -> Result<Claims, AppError> {
-    let token_data = decode::<Claims>(&token_header, &app_state.decoding_key, &Validation::new(jsonwebtoken::Algorithm::HS256))?;
+
+    let token_data = match decode::<Claims>(
+        &token_header,
+        &app_state.decoding_key,
+        &Validation::new(jsonwebtoken::Algorithm::HS256)
+    ) {
+        Ok(token_data) => token_data,
+        Err(e) => {
+            println!("JWT decode error: {}", e);
+            return Err(e.into());
+        }
+    };
+
     let claims = token_data.claims;
+
     Ok(claims)
 }
+
+
+

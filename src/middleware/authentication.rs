@@ -1,6 +1,10 @@
-use axum::extract::FromRequestParts;
+use axum::extract::{FromRequestParts, State};
+use axum::middleware::Next;
 use serde::{Deserialize, Serialize};
+use sqlx::decode;
 use sqlx::types::Uuid;
+use axum::extract::Request;
+use axum::response::Response;
 use axum::http::header::{AUTHORIZATION, HeaderMap};
 use crate::error::error::AppError;
 use crate::service::auth::decode_access_token;
@@ -47,4 +51,15 @@ pub fn extract_token(headers: &HeaderMap) -> Result<String, AppError>{
         }
         None => Err(AppError::Unauthorized)
     }
+}
+
+pub async fn authentication_middleware(State(state): State<AppState>, mut request: Request, next:Next) -> Result<Response, AppError>{
+    let token = extract_token(request.headers())?;
+    let decoded_token = decode_access_token(&state, token)?;
+    let authenticated_user = AuthenticatedUser{
+        id: decoded_token.sub
+    };
+    
+    request.extensions_mut().insert(authenticated_user);
+    Ok(next.run(request).await)
 }

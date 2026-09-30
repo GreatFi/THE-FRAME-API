@@ -1,5 +1,6 @@
 use anyhow::Result;
 use sqlx::types::Uuid;
+use crate::dto::auth::Role;
 use crate::entity::auth::{User, RefreshToken};
 use chrono::{DateTime, Utc};
 use crate::states::appstate::AppState;
@@ -7,14 +8,14 @@ use crate::error::error::AppError;
 
 pub async fn create_user(app_state: &AppState, name:&str, email:&str, hashed_password:&str) -> Result<User, AppError>{
 
-    let new_user = sqlx::query_as!(User, "INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email, password, created_at", name, email, hashed_password).fetch_one(&app_state.pool).await?;
+    let new_user = sqlx::query_as!(User, r#"INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email, password, role as "role: Role" , created_at"#, name, email, hashed_password).fetch_one(&app_state.pool).await?;
 
     Ok(new_user)
 }
 
 
 pub async fn get_users(app_state: &AppState) -> Result<Vec<User>, AppError>{
-    let users = sqlx::query_as!(User, "SELECT id, name, email, password, created_at FROM users").fetch_all(&app_state.pool).await?;
+    let users = sqlx::query_as!(User, r#"SELECT id, name, email, password, role as "role: Role", created_at FROM users"#).fetch_all(&app_state.pool).await?;
     Ok(users)
 }
 
@@ -35,7 +36,15 @@ pub async fn create_ref_token(app_state: &AppState, user_id: Uuid, token_hash:&s
 
 pub async fn retrieve_user(app_state: &AppState, email:&str) -> Result<Option<User>, AppError>{
     let user = sqlx::query_as!(User, 
-        "SELECT id, name, email, password, created_at FROM users WHERE email=$1", email).fetch_optional(&app_state.pool).await?;
+        r#"SELECT id, name, email, password, role as "role: Role", created_at FROM users WHERE email=$1"#, email).fetch_optional(&app_state.pool).await?;
     
     Ok(user)
+}
+
+// checking the user role in the db
+pub async fn get_user_role(app_state: &AppState, user_id: Uuid) -> Result<Role, AppError>{
+    let role = sqlx::query_scalar!( 
+        r#"SELECT role as "role: Role" FROM users WHERE id=$1"#, 
+        user_id).fetch_one(&app_state.pool).await?;
+    Ok(role)
 }

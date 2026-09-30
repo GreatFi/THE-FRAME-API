@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Serialize, Deserialize};
 use sqlx::types::Uuid;
-
+use crate::dto::auth::Role;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User{
@@ -9,6 +9,7 @@ pub struct User{
     pub name: String,
     pub email: String,
     pub password: String,
+    pub role: Role,
     pub created_at: Option<DateTime<Utc>>
 }
 

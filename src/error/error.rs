@@ -19,6 +19,8 @@ pub enum AppError {
     Unauthorized,
     #[error("Bad request")]
     BadRequest,
+    #[error("Validation failed")]
+    ValidationError(#[from] validator::ValidationErrors),
     #[error("Internal server error")]
     DatabaseError(#[from] sqlx::Error),
     #[error("Internal server error")]
@@ -40,6 +42,7 @@ impl IntoResponse for AppError{
             AppError::NotFound => StatusCode::NOT_FOUND,
             AppError::Unauthorized => StatusCode::UNAUTHORIZED,
             AppError::BadRequest => StatusCode::BAD_REQUEST,
+            AppError::ValidationError(_) => StatusCode::BAD_REQUEST,
             AppError::DatabaseError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::JsonWebTokenError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::Argon2Error(_) => StatusCode::INTERNAL_SERVER_ERROR,
