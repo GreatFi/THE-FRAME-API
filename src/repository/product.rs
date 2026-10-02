@@ -2,7 +2,6 @@
 
 use crate::error::error::AppError;
 use sqlx::types::BigDecimal;
-use anyhow::Result;
 use crate::entity::product::Product;
 use crate::dto::product::Category;
 use crate::states::appstate::AppState;

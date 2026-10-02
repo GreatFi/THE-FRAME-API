@@ -1,4 +1,3 @@
-use anyhow::Result;
 use sqlx::types::Uuid;
 use crate::dto::auth::Role;
 use crate::entity::auth::{User, RefreshToken};
@@ -40,6 +39,12 @@ pub async fn retrieve_user(app_state: &AppState, email:&str) -> Result<Option<Us
     
     Ok(user)
 }
+pub async fn retrieve_user_by_id(app_state: &AppState, id:Uuid) -> Result<User, AppError>{
+    let user = sqlx::query_as!(User, 
+        r#"SELECT id, name, email, password, role as "role: Role", created_at FROM users WHERE id=$1"#, id).fetch_one(&app_state.pool).await?;
+    
+    Ok(user)
+}
 
 // checking the user role in the db
 pub async fn get_user_role(app_state: &AppState, user_id: Uuid) -> Result<Role, AppError>{
@@ -48,3 +53,13 @@ pub async fn get_user_role(app_state: &AppState, user_id: Uuid) -> Result<Role, 
         user_id).fetch_one(&app_state.pool).await?;
     Ok(role)
 }
+
+pub async fn verify_user(tx: &mut sqlx::Transaction<'_, sqlx::Postgres>, user_id: Uuid) -> Result<bool, AppError>{
+    let result = sqlx::query!(r#"UPDATE users
+        SET is_verified = true
+        WHERE id = $1
+          AND is_verified = false"#, user_id).execute(&mut **tx).await?;
+    
+    Ok(result.rows_affected() == 1)
+}
+

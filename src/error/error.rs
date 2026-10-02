@@ -19,6 +19,8 @@ pub enum AppError {
     Unauthorized,
     #[error("Bad request")]
     BadRequest,
+    #[error("Internal server error")]
+    InvalidOtpData,
     #[error("Validation failed")]
     ValidationError(#[from] validator::ValidationErrors),
     #[error("Internal server error")]
@@ -29,6 +31,14 @@ pub enum AppError {
     Argon2Error(#[from] argon2::password_hash::Error),
     #[error("Internal server error")]
     SysRngError(#[from] SysError),
+    #[error("Internal server error")]
+    ConfigError(#[from] std::env::VarError),
+    #[error("Internal server error")]
+    Base64Error(#[from] base64::DecodeError),
+    #[error("Internal server error")]
+    AesKeyError(#[from] aes_gcm::aes::cipher::InvalidLength),
+    #[error("Internal server error")]
+    AesGcmError(#[from] aes_gcm::Error),
 }
 
 impl IntoResponse for AppError{
@@ -47,6 +57,11 @@ impl IntoResponse for AppError{
             AppError::JsonWebTokenError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::Argon2Error(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::SysRngError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::ConfigError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::Base64Error(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::AesKeyError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::AesGcmError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::InvalidOtpData => StatusCode::INTERNAL_SERVER_ERROR,
         };
         (status, body).into_response()
     }

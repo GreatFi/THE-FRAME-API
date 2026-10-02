@@ -1,5 +1,7 @@
 use crate::dto::auth::Role;
 use crate::error::error::AppError;
+use crate::repository::otp::create_otp;
+use crate::service::otp::{encrypt_otp, generate_otp};
 use argon2::{Argon2, PasswordHasher, PasswordVerifier};
 use chrono::{   Duration, Utc};
 use rand::{TryRng};
@@ -23,12 +25,20 @@ pub struct Claims {
    pub exp: i64
 }
 
-pub async fn register(app_state: &AppState, name:&str, email:&str, password:&str) -> Result<(User, String, String), AppError> {
+pub async fn register(app_state: &AppState, name:&str, email:&str, password:&str) -> Result<User, AppError> {
     let hashed_password = hash_password(password)?;
+    
     let new_user = create_user(app_state, name, email, &hashed_password).await?;
-    let ref_token = generate_refresh_token(app_state, new_user.id).await?;
-    let access_token = generate_access_token(app_state, new_user.id, (Utc::now() + Duration::minutes(15)).timestamp()).await?;
-    Ok((new_user, ref_token, access_token))
+    
+    let otp = generate_otp()?;
+    
+    let encrypted_otp = encrypt_otp(otp)?;
+    
+    let otp_expiry = Utc::now() + Duration::minutes(5);
+    let otp_record = create_otp(app_state, new_user.id, encrypted_otp, otp_expiry).await?;
+    
+
+    Ok(new_user)
 }
 
 pub async fn login(app_state: &AppState, email:&str, password: &str) -> Result<(User, String, String), AppError>{

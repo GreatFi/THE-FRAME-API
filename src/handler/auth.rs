@@ -9,10 +9,10 @@ use crate::repository::auth::{get_users};
 use crate::states::appstate::AppState;
 use crate::service::auth::{register, login};
 
-pub async fn create_user_handler(State(app_state): State<AppState>, Json(payload): Json<UserRequest>) -> Result<Json<AuthResponse>, AppError> {
+pub async fn create_user_handler(State(app_state): State<AppState>, Json(payload): Json<UserRequest>) -> Result<Json<User>, AppError> {
     payload.validate()?;
-    let (new_user, refresh_token, access_token) = register(&app_state, &payload.name, &payload.email, &payload.password).await?;
-    Ok(Json(AuthResponse { user: new_user, refresh_token, access_token }))
+    let new_user = register(&app_state, &payload.name, &payload.email, &payload.password).await?;
+    Ok(Json(new_user))
 }
 
 pub async fn login_handler(State(app_state): State<AppState>, Json(payload): Json<LoginRequest>) -> Result<Json<AuthResponse>, AppError>{
