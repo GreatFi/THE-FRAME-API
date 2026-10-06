@@ -21,6 +21,12 @@ pub enum AppError {
     BadRequest,
     #[error("Internal server error")]
     InvalidOtpData,
+    #[error("Internal server error")]
+    AddressError(#[from] lettre::address::AddressError),
+    #[error("Internal server error")]
+    EmailBuildError(#[from] lettre::error::Error),
+    #[error("Internal server error")]
+    SmtpError(#[from] lettre::transport::smtp::Error),
     #[error("Validation failed")]
     ValidationError(#[from] validator::ValidationErrors),
     #[error("Internal server error")]
@@ -43,7 +49,7 @@ pub enum AppError {
 
 impl IntoResponse for AppError{
     fn into_response(self) -> Response {
-
+        tracing::error!("request failed: {:?}", self);
         let body = self.to_string();
 
         let status = match self {
@@ -62,6 +68,9 @@ impl IntoResponse for AppError{
             AppError::AesKeyError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::AesGcmError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::InvalidOtpData => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::AddressError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::EmailBuildError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::SmtpError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
         (status, body).into_response()
     }

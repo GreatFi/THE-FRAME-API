@@ -3,6 +3,7 @@ use base64::{engine::general_purpose::STANDARD, Engine};
 use aes_gcm::{aead::Aead,Aes256Gcm, KeyInit, Nonce};
 use uuid::Uuid;
 use chrono::{Duration, Utc};
+use crate::repository::otp::create_otp;
 use crate::{entity::auth::User, error::error::AppError, repository::{auth::{retrieve_user_by_id, verify_user}, otp::{get_otp, mark_otp_used}}, service::auth::{generate_access_token, generate_refresh_token}, states::appstate::AppState};
 use std::env;
 
@@ -22,7 +23,7 @@ pub fn generate_otp() -> Result<String, AppError>{
 
 } 
 
-pub fn encrypt_otp(otp: String) -> Result<String, AppError> {
+pub fn encrypt_otp(otp: &String) -> Result<String, AppError> {
     let key = env::var("OTP_ENCRYPTION_KEY")?;
 
     let key = STANDARD.decode(key)?;
@@ -86,4 +87,35 @@ pub async fn verify_otp(app_state: &AppState, user_id: Uuid, submitted_otp: &str
         }
         None => Err(AppError::Unauthorized)
     }
+}
+
+pub async fn send_otp(app_state: &AppState, user_id: Uuid) -> Result<(), AppError>{
+
+    let user = retrieve_user_by_id(app_state, user_id).await?;
+
+    if user.is_verified {
+        return Err(AppError::Conflict);
+    }
+
+    let existing_otp = get_otp(app_state, user_id).await?;
+    let otp = match existing_otp{
+        Some(otp) =>{
+            let plaintext_otp = decrypt_otp(otp.code)?;
+            plaintext_otp
+        }
+        None => {
+            let otp = generate_otp()?;
+            let encrypted_otp = encrypt_otp(&otp)?;
+            let otp_expiry = Utc::now() + Duration::minutes(5);
+            create_otp(app_state, user_id, encrypted_otp, otp_expiry).await?;
+            otp
+        }
+    };
+
+
+
+    app_state.mailer.send_otp_to_email(&user.email, &otp).await?;
+    Ok(())
+
+    // send the OTP to the user via email or SMS
 }

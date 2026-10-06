@@ -3,8 +3,10 @@
 use axum::{Router, middleware::from_fn_with_state, routing::{get, post, put}};
 
 use crate::{handler::product::{
-    create_product_handler, delete_product_handler, get_product_by_id_handler, get_products_handler, health_check_handler, update_product_by_id_handler,
-}, middleware::{authentication::authentication_middleware, authorization::authorization_middleware}};
+    create_product_handler, delete_product_handler, get_product_by_id_handler, get_products_handler, health_check_handler, update_product_by_id_handler, 
+}};
+use crate::handler::otp::{send_otp_handler, verify_otp_handler};
+use crate::middleware::{authentication::authentication_middleware, authorization::authorization_middleware};
 use crate::handler::genre::get_genres_handler;
 use crate::handler::auth::{create_user_handler, get_users_handler, login_handler};
 use crate::states::appstate::AppState;
@@ -16,7 +18,9 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/auth/login", post(login_handler))
         .route("/genres", get(get_genres_handler))
         .route("/products", get(get_products_handler))
-        .route("/products/{id}", get(get_product_by_id_handler));
+        .route("/products/{id}", get(get_product_by_id_handler))
+        .route("/send-otp", post(send_otp_handler))
+        .route("/verify-otp", post(verify_otp_handler));
     
     let protected_routes = Router::new()
         .route("/products", post(create_product_handler))

@@ -25,3 +25,6 @@ uuid = { version = "1.26.1", features=["serde"]}
 thiserror = "2.0.20"
 validator = { version = "0.21.0", features = ["derive"]}
 aes-gcm = "0.11.1"
+lettre = { version = "0.11.23", features = ["tokio1", "tokio1-native-tls"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }

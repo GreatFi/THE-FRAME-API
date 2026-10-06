@@ -30,14 +30,6 @@ pub async fn register(app_state: &AppState, name:&str, email:&str, password:&str
     
     let new_user = create_user(app_state, name, email, &hashed_password).await?;
     
-    let otp = generate_otp()?;
-    
-    let encrypted_otp = encrypt_otp(otp)?;
-    
-    let otp_expiry = Utc::now() + Duration::minutes(5);
-    let otp_record = create_otp(app_state, new_user.id, encrypted_otp, otp_expiry).await?;
-    
-
     Ok(new_user)
 }
 

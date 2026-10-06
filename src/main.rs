@@ -11,7 +11,7 @@ mod service;
 mod routes;
 mod states;
 
-
+use tracing_subscriber::EnvFilter;
 use jsonwebtoken::{DecodingKey, EncodingKey};
 use tokio::net::TcpListener;
 use std::env;
@@ -19,20 +19,25 @@ use dotenvy::dotenv;
 use config::db::establish_connection;
 use routes::routes::create_router;
 use states::appstate::AppState;
-
+use crate::service::email::Mailer;
 #[tokio::main]
 async fn main() {
     dotenv().ok();
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .init();
     let db_url = env::var("DATABASE_URL").expect("Database Url");
     let pool = establish_connection(&db_url).await.unwrap();
 
     let secret = env::var("JWT_SECRET").expect("Jwt Secret");
     let encoding_key = EncodingKey::from_secret(secret.as_ref());
     let decoding_key = DecodingKey::from_secret(secret.as_ref());
+    let mailer = Mailer::from_env().expect("invalid email config");
     let app_state = AppState{
         pool,
         encoding_key,
-        decoding_key
+        decoding_key,
+        mailer
     };
 
     let app = create_router(app_state);

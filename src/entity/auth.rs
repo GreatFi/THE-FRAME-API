@@ -10,7 +10,8 @@ pub struct User{
     pub email: String,
     pub password: String,
     pub role: Role,
-    pub created_at: Option<DateTime<Utc>>
+    pub created_at: Option<DateTime<Utc>>,
+    pub is_verified: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
