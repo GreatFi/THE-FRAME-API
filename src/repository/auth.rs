@@ -7,7 +7,9 @@ use crate::error::error::AppError;
 
 pub async fn create_user(app_state: &AppState, name:&str, email:&str, hashed_password:&str) -> Result<User, AppError>{
 
-    let new_user = sqlx::query_as!(User, r#"INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email, password, role as "role: Role" , created_at, is_verified"#, name, email, hashed_password).fetch_one(&app_state.pool).await?;
+    let new_user = sqlx::query_as!(User, r#"INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email, password, role as "role: Role" , created_at, is_verified"#, name, email, hashed_password).fetch_one(&app_state.pool).await.map_err(|e| match e {
+    sqlx::Error::Database(ref db) if db.is_unique_violation() => AppError::Conflict,
+    other => AppError::DatabaseError(other)})?;
 
     Ok(new_user)
 }

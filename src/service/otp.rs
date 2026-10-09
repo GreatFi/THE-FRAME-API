@@ -3,7 +3,7 @@ use base64::{engine::general_purpose::STANDARD, Engine};
 use aes_gcm::{aead::Aead,Aes256Gcm, KeyInit, Nonce};
 use uuid::Uuid;
 use chrono::{Duration, Utc};
-use crate::repository::otp::create_otp;
+use crate::repository::otp::{create_otp, increment_otp_attempts};
 use crate::{entity::auth::User, error::error::AppError, repository::{auth::{retrieve_user_by_id, verify_user}, otp::{get_otp, mark_otp_used}}, service::auth::{generate_access_token, generate_refresh_token}, states::appstate::AppState};
 use std::env;
 
@@ -68,6 +68,7 @@ pub async fn verify_otp(app_state: &AppState, user_id: Uuid, submitted_otp: &str
     let otp = get_otp(app_state, user_id).await?;
     match otp{
         Some(otp) => {
+            increment_otp_attempts(app_state, otp.id).await?;
             let decrypt_otp = decrypt_otp(otp.code)?;
 
             if submitted_otp != decrypt_otp{
@@ -96,7 +97,10 @@ pub async fn send_otp(app_state: &AppState, user_id: Uuid) -> Result<(), AppErro
     if user.is_verified {
         return Err(AppError::Conflict);
     }
-
+    
+    if app_state.send_limiter.check_key(&user_id).is_err() {
+        return Err(AppError::TooManyRequests);
+    }
     let existing_otp = get_otp(app_state, user_id).await?;
     let otp = match existing_otp{
         Some(otp) =>{

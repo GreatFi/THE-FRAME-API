@@ -9,5 +9,6 @@ pub struct Otp {
     pub code: String,
     pub expires_at: DateTime<Utc>,
     pub used: Option<bool>,
-    pub created_at: Option<DateTime<Utc>>
+    pub created_at: Option<DateTime<Utc>>,
+    pub attempts: i32,
 }

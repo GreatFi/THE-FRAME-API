@@ -15,6 +15,8 @@ pub enum AppError {
     Conflict,
     #[error("Not found")]
     NotFound,
+    #[error("Too many requests")]
+    TooManyRequests,
     #[error("Unauthorized")]
     Unauthorized,
     #[error("Bad request")]
@@ -57,6 +59,7 @@ impl IntoResponse for AppError{
             AppError::Conflict => StatusCode::CONFLICT,
             AppError::NotFound => StatusCode::NOT_FOUND,
             AppError::Unauthorized => StatusCode::UNAUTHORIZED,
+            AppError::TooManyRequests => StatusCode::TOO_MANY_REQUESTS,
             AppError::BadRequest => StatusCode::BAD_REQUEST,
             AppError::ValidationError(_) => StatusCode::BAD_REQUEST,
             AppError::DatabaseError(_) => StatusCode::INTERNAL_SERVER_ERROR,

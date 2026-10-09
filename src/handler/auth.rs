@@ -11,7 +11,7 @@ use crate::service::auth::{register, login};
 
 pub async fn create_user_handler(State(app_state): State<AppState>, Json(payload): Json<UserRequest>) -> Result<Json<User>, AppError> {
     payload.validate()?;
-    let new_user = register(&app_state, &payload.name, &payload.email, &payload.password).await?;
+    let new_user = register(&app_state, &payload.name, &payload.email.trim().to_lowercase(), &payload.password).await?;
     Ok(Json(new_user))
 }
 
